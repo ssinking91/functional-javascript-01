@@ -7,40 +7,89 @@
    1. 평가와 일급
 
       ```javascript
-          # 평가
-            - 코드가 계산(Evaluation) 되어 값을 만드는 것
+      # 평가
+        - 코드가 계산(Evaluation) 되어 값을 만드는 것
 
-          # 일급
-            - 값으로 다룰 수 있다.
-            - 변수에 담을 수 있다.
-            - 함수의 인자로 사용될 수 있다.
-            - 함수의 결과로 사용될 수 있다.
+      # 일급
+        - `값`으로 다룰 수 있다.
+        - `변수`에 담을 수 있다.
+        - 함수의 `인자`로 사용될 수 있다.
+        - 함수의 `결과`로 사용될 수 있다.
       ```
 
    2. 일급 함수
 
       ```javascript
-          # 일급 함수
-            - 함수를 값으로 다룰 수 있다.
-            - 조합성과 추상화의 도구
+      # 일급 함수
+        - 함수를 `값`으로 다룰 수 있다.
+        - 조합성과 추상화의 도구
       ```
 
    3. 고차 함수
 
       ```javascript
-          # 고차 함수
-            - 함수를 값으로 다루는 함수
-            - 함수를 인자로 받아서 실행하는 함수
-            - 함수를 만들어 리턴하는 함수 (클로저를 만들어 리턴하는 함수)
+      # 고차 함수
+       - 함수를 `값`으로 다루는 함수
+       - 함수를 `인자`로 받아서 실행하는 함수
+       - 함수를 만들어 리턴하는 함수 (`클로저`를 만들어 리턴하는 함수)
       ```
 
    4. 부수효과와 순수 함수
 
 2. ES6에서의 순회와 이터러블/이터레이터 프로토콜
+
    1. 기존과 달라진 ES6에서의 리스트 순회
+      ```javascript
+      - for i++
+      - for of
+      ```
    2. Array, Set, Map을 통해 알아보는 이터러블/이터레이터 프로토콜
+
+      ```javascript
+      log('Set -----------');
+      const set = new Set([1, 2, 3]);
+      for (const a of set) log(a);
+
+      log('Map -----------');
+      const map = new Map([['a', 1], ['b', 2], ['c', 3]]);
+      for (const a of map.keys()) log(a);
+      for (const a of map.values()) log(a);
+      for (const a of map.entries()) log(a);
+
+      - 이터러블: `이터레이터를 리턴`하는 `[Symbol.iterator]() 를 가진 값`
+
+      - 이터레이터: `{ value, done } 객체를 리턴`하는 `next() 를 가진 값`
+
+      - 이터러블/이터레이터 프로토콜: 이터러블을 for...of, 전개 연산자 등과 함께 동작하도록한 규약
+      ```
+
    3. 사용자 정의 이터러블
+      ```javascript
+      const iterable = {
+        [Symbol.iterator]() {
+          let i = 3;
+          return {
+            next() {
+              return i == 0 ? { done: true } : { value: i--, done: false };
+            },
+            [Symbol.iterator]() {
+              return this;
+            },
+          };
+        },
+      };
+      let iterator = iterable[Symbol.iterator]();
+      iterator.next();
+      iterator.next();
+      ```
    4. 전개 연산자
+
+      ```javascript
+      const a = [1, 2];
+      // a[Symbol.iterator] = null;
+      log([...a, ...arr, ...set, ...map.keys()]);
+      ```
+
 3. 제너레이터와 이터레이터
    1. 제너레이터와 이터레이터
    2. odds
