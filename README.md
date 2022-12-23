@@ -221,7 +221,20 @@
    5. reduce
 
       ```javascript
+      const reduce = (f, acc, iter) => {
+        if (!iter) {
+          iter = acc[Symbol.iterator](); // 이터레이터를 반환
+          acc = iter.next().value; // 이터레이터 첫번째 값 반환
+        }
+        for (const a of iter) {
+          acc = f(acc, a);
+        }
+        return acc;
+      };
 
+      const add = (a, b) => a + b;
+
+      log(reduce(add, [1, 2, 3, 4, 5]));
       ```
 
    6. reduce 2
