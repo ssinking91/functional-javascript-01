@@ -240,13 +240,47 @@
    6. reduce 2
 
       ```javascript
-
+      log(
+        reduce(
+          (total_price, product) => total_price + product.price,
+          0,
+          products
+        )
+      );
       ```
 
    7. map+filter+reduce 중첩 사용과 함수형 사고
 
       ```javascript
+      const products = [
+        { name: "반팔티", price: 15000 },
+        { name: "긴팔티", price: 20000 },
+        { name: "핸드폰케이스", price: 15000 },
+        { name: "후드티", price: 30000 },
+        { name: "바지", price: 25000 },
+      ];
 
+      const add = (a, b) => a + b;
+
+      log(
+        reduce(
+          add,
+          map(
+            (p) => p.price,
+            filter((p) => p.price < 20000, products)
+          )
+        )
+      );
+
+      log(
+        reduce(
+          add,
+          filter(
+            (n) => n >= 20000,
+            map((p) => p.price, products)
+          )
+        )
+      );
       ```
 
 5. 코드를 값으로 다루어 표현력 높이기
