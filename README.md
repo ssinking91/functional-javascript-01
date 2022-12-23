@@ -288,6 +288,7 @@
    1. go
 
       ```javascript
+      // 값을 리턴하는 함수
       const go = (...args) => reduce((a, f) => f(a), args);
 
       go(
@@ -301,7 +302,19 @@
    2. pipe
 
       ```javascript
+      // 함수를 리턴하는 함수
+      const pipe =
+        (f, ...fs) =>
+        (...as) =>
+          go(f(...as), ...fs);
 
+      const f = pipe(
+        (a, b) => a + b,
+        (a) => a + 10,
+        (a) => a + 100
+      );
+
+      log(f(0, 1));
       ```
 
    3. go를 사용하여 읽기 좋은 코드로 만들기
