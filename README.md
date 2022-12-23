@@ -203,7 +203,19 @@
    4. filter
 
       ```javascript
+      const filter = (f, iter) => {
+        let res = [];
+        for (const a of iter) {
+          if (f(a)) res.push(a);
+        }
+        return res;
+      };
 
+      log(...filter((p) => p.price < 20000, products));
+
+      log(...filter((p) => p.price >= 20000, products));
+
+      log(filter((n) => n % 2, [1, 2, 3, 4]));
       ```
 
    5. reduce
