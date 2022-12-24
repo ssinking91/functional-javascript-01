@@ -289,6 +289,7 @@
 
       ```javascript
       // 값을 리턴하는 함수
+      // 위에서부터 아래로 읽을 수 있음
       const go = (...args) => reduce((a, f) => f(a), args);
 
       go(
@@ -320,7 +321,31 @@
    3. go를 사용하여 읽기 좋은 코드로 만들기
 
       ```javascript
+      log(
+        reduce(
+          add,
+          map(
+            (p) => p.price,
+            filter((p) => p.price < 20000, products)
+          )
+        )
+      );
 
+      go(
+        products,
+        (products) => filter((p) => p.price < 20000, products),
+        (products) => map((p) => p.price, products),
+        (prices) => reduce(add, prices),
+        log
+      );
+
+      go(
+        products,
+        filter((p) => p.price < 20000),
+        map((p) => p.price),
+        reduce(add),
+        log
+      );
       ```
 
    4. go+curry를 사용하여 더 읽기 좋은 코드로 만들기
