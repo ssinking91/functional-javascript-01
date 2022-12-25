@@ -370,7 +370,29 @@
    5. 함수 조합으로 함수 만들기
 
       ```javascript
+      const pipe =
+        (f, ...fs) =>
+        (...as) =>
+          go(f(...as), ...fs);
 
+      const total_price = pipe(
+        map((p) => p.price),
+        reduce(add)
+      );
+
+      const base_total_price = (predi) => pipe(filter(predi), total_price);
+
+      go(
+        products,
+        base_total_price((p) => p.price < 20000),
+        log
+      );
+
+      go(
+        products,
+        base_total_price((p) => p.price >= 20000),
+        log
+      );
       ```
 
 6. 장바구니 예제
