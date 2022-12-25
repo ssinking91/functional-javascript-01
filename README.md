@@ -338,6 +338,25 @@
         (prices) => reduce(add, prices),
         log
       );
+      ```
+
+   4. go+curry를 사용하여 더 읽기 좋은 코드로 만들기
+
+      ```javascript
+      // 함수를 받아서 함수를 리턴
+      // 인자를 받아서 원하는 개수만큼 들어왔을 때, 받아두었던 함수를 원하는 시점에 평가
+      const curry =
+        (f) =>
+        (a, ..._) =>
+          _.length ? f(a, ..._) : (..._) => f(a, ..._);
+
+      const mult = curry((a, b) => a * b);
+      log(mult(3)(2));
+
+      const mult3 = mult(3);
+      log(mult3(10));
+      log(mult3(5));
+      log(mult3(3));
 
       go(
         products,
@@ -346,12 +365,6 @@
         reduce(add),
         log
       );
-      ```
-
-   4. go+curry를 사용하여 더 읽기 좋은 코드로 만들기
-
-      ```javascript
-
       ```
 
    5. 함수 조합으로 함수 만들기
