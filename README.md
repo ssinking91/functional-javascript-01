@@ -498,7 +498,7 @@
        log(list); // [0, 1, 2, 3] 배열 출력 => range(4) 실행 즉시 배열로 평가
        log(reduce(add, list));
 
-       // 느긋한 L.range
+       // 느긋한 L.range : 제너레이션
        const L = {};
        L.range = function* (l) {
          let i = -1;
@@ -515,7 +515,14 @@
     2. range와 느긋한 L.range 테스트
 
        ```javascript
+       function test(name, time, f) {
+         console.time(name);
+         while (time--) f();
+         console.timeEnd(name);
+       }
 
+       test("range", 10, () => reduce(add, range(1000000)));
+       test("L.range", 10, () => reduce(add, L.range(1000000)));
        ```
 
     3. take
