@@ -548,32 +548,179 @@
 
     4. 제너레이터/이터레이터 프로토콜로 구현하는 지연 평가
 
-       ```javascript
+       - `이터러블` 중심 프로그래밍에서의 `지연 평가 (Lazy Evaluation)`
 
-       ```
+         - 제때 계산법
+
+         - 느긋한 계산법
+
+         - 제너레이터/이터레이터 프로토콜을 기반으로 구현
 
     5. L.map
 
        ```javascript
+       // 지연성 map => 제너레이터 이터레이터 프로토콜 기반으로 구현 / 이터레이터를 반환하는 제너레이터
+       L.map = function* (f, iter) {
+         for (const a of iter) yield f(a);
+       };
 
+       var it = L.map((a) => a + 10, [1, 2, 3]);
+
+       log(it.next());
+       log(it.next());
+       log(it.next());
+       //
+       log([...it]);
        ```
 
     6. L. filter
 
        ```javascript
+       // 지연성 filter => 제너레이터 이터레이터 프로토콜 기반으로 구현 / 이터레이터를 반환하는 제너레이터
+       L.filter = function* (f, iter) {
+         for (const a of iter) if (f(a)) yield a;
+       };
 
+       var it = L.filter((a) => a % 2, [1, 2, 3, 4]);
+
+       log(it.next());
+       log(it.next());
+       log(it.next());
        ```
 
     7. range, map, filter, take, reduce 중첩 사용
 
-       ```javascript
+       - 엄격한 평가
 
+       - 평가 흐름이 왼쪽에서 오른쪽으로 흐름(즉시 평가)
+
+       - 각각의 계산이 모두 종료되어야 다음 단계를 수행
+
+       ```javascript
+       const range = (l) => {
+         let i = -1;
+         let res = [];
+         while (++i < l) {
+           res.push(i);
+         }
+         return res;
+       };
+       //
+       const map = curry((f, iter) => {
+         let res = [];
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           res.push(f(a));
+         }
+         return res;
+       });
+       //
+       const filter = curry((f, iter) => {
+         let res = [];
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           if (f(a)) res.push(a);
+         }
+         return res;
+       });
+       //
+       const take = curry((l, iter) => {
+         let res = [];
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           res.push(a);
+           if (res.length == l) return res;
+         }
+         return res;
+       });
+       //
+       const reduce = curry((f, acc, iter) => {
+         if (!iter) {
+           iter = acc[Symbol.iterator]();
+           acc = iter.next().value;
+         } else {
+           iter = iter[Symbol.iterator]();
+         }
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           acc = f(acc, a);
+         }
+         return acc;
+       });
+       //
+       console.time("");
+       go(
+         range(100000),
+         map((n) => n + 10),
+         filter((n) => n % 2),
+         take(10),
+         log
+       );
+       console.timeEnd("");
        ```
 
     8. L.range, L.map, L.filter, take 의 평가 순서
 
-       ```javascript
+       - 지연 평가
 
+       - 평가 흐름이 위에서 아래로 흐름
+
+       ```javascript
+       L.range = function* (l) {
+         let i = -1;
+         while (++i < l) {
+           yield i;
+         }
+       };
+       //
+       L.map = curry(function* (f, iter) {
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           yield f(a);
+         }
+       });
+       //
+       L.filter = curry(function* (f, iter) {
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           if (f(a)) {
+             yield a;
+           }
+         }
+       });
+       //
+       const take = curry((l, iter) => {
+         let res = [];
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           res.push(a);
+           if (res.length == l) return res;
+         }
+         return res;
+       });
+       //
+       console.time("L");
+       go(
+         L.range(Infinity),
+         L.map((n) => n + 10),
+         L.filter((n) => n % 2),
+         take(10),
+         log
+       );
+       console.timeEnd("L");
        ```
 
     9. 엄격한 계산과 느긋한 계산의 효율성 비교
