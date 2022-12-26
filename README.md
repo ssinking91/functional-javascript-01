@@ -528,7 +528,22 @@
     3. take
 
        ```javascript
+       const take = curry((l, iter) => {
+         let res = [];
+         for (const a of iter) {
+           res.push(a);
+           if (res.length == l) return res;
+         }
+         return res;
+       });
 
+       console.time("");
+       go(range(10000), take(5), reduce(add), log);
+       console.timeEnd("");
+
+       console.time("");
+       go(L.range(10000), take(5), reduce(add), log);
+       console.timeEnd("");
        ```
 
     4. 제너레이터/이터레이터 프로토콜로 구현하는 지연 평가
