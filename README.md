@@ -415,12 +415,60 @@
       const total_quantity = sum((p) => p.quantity);
 
       const total_price = sum((p) => p.price * p.quantity);
+
+      log(total_quantity(products));
+
+      // go, pipe 변환 예시
+      const total_quantity = (products) =>
+        go(
+          products,
+          map((p) => p.quantity),
+          reduce((a, b) => a + b)
+        );
+
+      //  (products) => go(products, ... )   =>   pipe( ... )
+      const total_quantity = pipe(
+        map((p) => p.quantity),
+        reduce((a, b) => a + b)
+      );
+      //
+
+      log(total_quantity(products));
       ```
 
    2. HTML로 출력하기
 
       ```javascript
-
+      document.querySelector("#cart").innerHTML = `
+         <table>
+            <tr>
+            <th></th>
+            <th>상품 이름</th>
+            <th>가격</th>
+            <th>수량</th>
+            <th>총 가격</th>
+            </tr>
+            ${go(
+              products,
+              sum(
+                (p) => `
+         <tr>
+            <td><input type="checkbox" ${p.is_selected ? "checked" : ""}></td>
+            <td>${p.name}</td>
+            <td>${p.price}</td>
+            <td><input type="number" value="${p.quantity}"></td>
+            <td>${p.price * p.quantity}</td>
+         </tr>
+      `
+              )
+            )}
+            <tr>
+            <td colspan="3">합계</td>
+            <td>${total_quantity(filter((p) => p.is_selected, products))}</td>
+            <td>${total_price(filter((p) => p.is_selected, products))}</td>
+            </tr>
+         </table>
+      `;
       ```
 
 7. 지연성 1
