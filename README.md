@@ -668,7 +668,7 @@
 
     8. L.range, L.map, L.filter, take 의 평가 순서
 
-       - 지연 평가
+       - 지연 평가(Lazy Evaluation) : 제너레이터/이터레이터 프로토콜을 기반으로 구현
 
        - 평가 흐름이 위에서 아래로 흐름
 
@@ -714,7 +714,7 @@
        //
        console.time("L");
        go(
-         L.range(Infinity),
+         L.range(100000),
          L.map((n) => n + 10),
          L.filter((n) => n % 2),
          take(10),
@@ -726,20 +726,37 @@
     9. 엄격한 계산과 느긋한 계산의 효율성 비교
 
        ```javascript
-
+       console.time("L");
+       go(
+         L.range(Infinity),
+         L.map((n) => n + 10),
+         L.filter((n) => n % 2),
+         take(10),
+         log
+       );
+       console.timeEnd("L");
        ```
 
     10. map, filter 계열 함수들이 가지는 결합 법칙
 
-        ```javascript
+        - 사용하는 데이터가 무엇이든지
 
+        - 사용하는 보조 함수가 순수 함수라면 무엇이든지
+
+        - 아래와 같이 결합한다면 둘 다 결과가 같다.
+
+        ```javascript
+        [[mapping, mapping], [filtering, filtering], [mapping, mapping]] = [
+          [mapping, filtering, mapping],
+          [mapping, filtering, mapping],
+        ];
         ```
 
     11. ES6의 기본 규악을 통해 구현하는 지연 평가의 장점
 
-        ```javascript
+        - ES6를 통해 가능
 
-        ```
+        - 조합성이 높음
 
 8.  지연성 2
 
