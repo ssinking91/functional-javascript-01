@@ -700,6 +700,21 @@
          }
        });
        //
+       const reduce = curry((f, acc, iter) => {
+         if (!iter) {
+           iter = acc[Symbol.iterator]();
+           acc = iter.next().value;
+         } else {
+           iter = iter[Symbol.iterator]();
+         }
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           acc = f(acc, a);
+         }
+         return acc;
+       });
+       //
        const take = curry((l, iter) => {
          let res = [];
          iter = iter[Symbol.iterator]();
@@ -762,20 +777,40 @@
 
     1. 결과를 만드는 함수 reduce, take
 
-       ```javascript
+       - 최종적으로 함수의 결과를 만드는 함수
 
-       ```
+       - 연산의 시작점을 알리는 함수
 
     2. queryStr 함수 만들기
 
        ```javascript
+       const queryStr = pipe(
+         Object.entries,
+         map(([k, v]) => `${k}=${v}`),
+         reduce((a, b) => `${a}&${b}`)
+       );
 
+       log(queryStr({ limit: 10, offset: 10, type: "notice" }));
        ```
 
     3. Array.prototype.join 보다 다형성이 높은 join 함수
 
        ```javascript
+       L.entries = function* (obj) {
+         for (const k in obj) yield [k, obj[k]];
+       };
 
+       const join = curry((sep = ",", iter) =>
+         reduce((a, b) => `${a}${sep}${b}`, iter)
+       );
+
+       const queryStr = pipe(
+         L.entries,
+         L.map(([k, v]) => `${k}=${v}`),
+         join("&")
+       );
+
+       log(queryStr({ limit: 10, offset: 10, type: "notice" }));
        ```
 
     4. take, find
