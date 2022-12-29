@@ -816,19 +816,109 @@
     4. take, find
 
        ```javascript
+       const users = [
+         { age: 32 },
+         { age: 31 },
+         { age: 37 },
+         { age: 28 },
+         { age: 25 },
+         { age: 32 },
+         { age: 31 },
+         { age: 37 },
+       ];
 
+       const find = curry((f, iter) =>
+         go(iter, L.filter(f), take(1), ([a]) => a)
+       );
+
+       log(find((u) => u.age < 30)(users));
+
+       go(
+         users,
+         L.map((u) => u.age),
+         find((n) => n < 30),
+         log
+       );
        ```
 
     5. L.map, L.filter로 map과 filter 만들기
 
        ```javascript
+       L.map = curry(function* (f, iter) {
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           yield f(a);
+         }
+       });
+       //
+       L.filter = curry(function* (f, iter) {
+         iter = iter[Symbol.iterator]();
+         let cur;
+         while (!(cur = iter.next()).done) {
+           const a = cur.value;
+           if (f(a)) {
+             yield a;
+           }
+         }
+       });
 
+       // ## L.map + take로 map 만들기
+
+       L.map = curry(function* (f, iter) {
+         for (const a of iter) {
+           yield f(a);
+         }
+       });
+
+       const takeAll = take(Infinity);
+
+       const map = curry(pipe(L.map, takeAll));
+
+       log(map((a) => a + 10, L.range(4)));
+
+       // ## L.filter + take로 filter 만들기
+
+       L.filter = curry(function* (f, iter) {
+         for (const a of iter) {
+           if (f(a)) yield a;
+         }
+       });
+
+       const filter = curry(pipe(L.filter, takeAll));
+
+       log(filter((a) => a % 2, range(4)));
        ```
 
     6. L.flatten, flatten
 
        ```javascript
+       log([...[1, 2], 3, 4, ...[5, 6], ...[7, 8, 9]]);
 
+       const isIterable = (a) => a && a[Symbol.iterator];
+
+       L.flatten = function* (iter) {
+         for (const a of iter) {
+           if (isIterable(a)) for (const b of a) yield b;
+           else yield a;
+         }
+       };
+
+       var it = L.flatten([[1, 2], 3, 4, [5, 6], [7, 8, 9]]);
+       log(it.next());
+       log(it.next());
+       log(it.next());
+       log(it.next());
+       log(take(6, L.flatten([[1, 2], 3, 4, [5, 6], [7, 8, 9]])));
+
+       // log(it.next());
+       // log(it.next());
+       // log(it.next());
+       // log(it.next());
+
+       const flatten = pipe(L.flatten, takeAll);
+       log(flatten([[1, 2], 3, 4, [5, 6], [7, 8, 9]]));
        ```
 
     7. L.flatMap, flatMap
