@@ -1109,19 +1109,77 @@
     1. callback과 Promise
 
        ```javascript
+       function add10(a, callback) {
+         setTimeout(() => callback(a + 10), 100);
+       }
 
+       add10(5, (res) => {
+         add10(res, (res) => {
+           add10(res, (res) => {
+             log(res);
+           });
+         });
+       });
+
+       function add20(a) {
+         return new Promise((resolve) =>
+           setTimeout(() => resolve(a + 20), 100)
+         );
+       }
+
+       add20(5).then(add20).then(add20).then(log);
        ```
 
     2. 비동기를 값으로 만드는 Promise
 
-       ```javascript
+       - Promise와 callback의 차이 : Promise는 비동기를 일급(⭐대기(pending), ⭐성공(fulfilled), ⭐실패(rejected)를 다루는 일급 값)으로 다룸 => Promise가 리턴된 이후 내가 원하는 일을 `.then`을 통해 이어나갈 수 있음
 
+       - 일급
+         - `값`으로 다룰 수 있다.
+         - `변수`에 담을 수 있다.
+         - 함수의 `인자`로 사용될 수 있다.
+         - 함수의 `결과`로 사용될 수 있다.
+
+       ```javascript
+       function add10(a, callback) {
+         setTimeout(() => callback(a + 10), 100);
+       }
+
+       var a = add10(5, (res) => {
+         add10(res, (res) => {
+           add10(res, (res) => {
+             log(res);
+           });
+         });
+       });
+
+       log(a);
+
+       function add20(a) {
+         return new Promise((resolve) =>
+           setTimeout(() => resolve(a + 20), 100)
+         );
+       }
+
+       var b = add20(5).then(add20).then(add20).then(log);
+
+       log(b);
        ```
 
     3. 값으로서의 Promise 활용
 
        ```javascript
+       const delay100 = (a) =>
+         new Promise((resolve) => setTimeout(() => resolve(a), 100));
 
+       const go1 = (a, f) => (a instanceof Promise ? a.then(f) : f(a));
+       const add5 = (a) => a + 5;
+
+       const n1 = 10;
+       // log(go1(go1(n1, add5), log));
+
+       const n2 = delay100(10);
+       // log(go1(go1(n2, add5), log));
        ```
 
     4. 합성 관점에서의 Promise와 모나드
