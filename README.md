@@ -1176,34 +1176,137 @@
        const add5 = (a) => a + 5;
 
        const n1 = 10;
-       // log(go1(go1(n1, add5), log));
+       // log(go1(go1(n1, add5), log));  // undefined
 
        const n2 = delay100(10);
-       // log(go1(go1(n2, add5), log));
+       // log(go1(go1(n2, add5), log));  // Promise{<pending>}
        ```
 
     4. 합성 관점에서의 Promise와 모나드
 
-       ```javascript
+       - 모나드 : 함수 합성을 할 때, 상황에 따라 안전하게 합성하기 위한 방법
 
+       - Promise : 비동기 상황을 안전하게 합성
+
+       ```javascript
+       // f . g
+       // f(g(x))
+
+       const g = (a) => a + 1;
+       const f = (a) => a * a;
+
+       // log(f(g(1)));
+       // log(f(g()));
+
+       // Array
+       Array.of(1).map(g).map(f) /*.forEach(r => log(r))*/;
+       [].map(g).map(f) /*.forEach(r => log(r))*/;
+
+       // Promise : 비동기 상황(대기 => pending)
+       Promise.resolve(2).then(g).then(f) /*.then(r => log(r))*/;
+       new Promise((resolve) => setTimeout(() => resolve(2), 100))
+         .then(g)
+         .then(f) /*.then(r => log(r))*/;
        ```
 
     5. Kleisli Composition 관점에서의 Promise
 
-       ```javascript
+       - Kleisli Composition : 오류가 있을 수 있는 상황에서 함수의 합성 안전하게 하는 하나의 규칙
 
+       - Promise : 비동기 상황을 안전하게 합성
+
+       ```javascript
+       // f . g
+       // f(g(x)) = f(g(x))
+       // f(g(x)) = g(x)
+
+       var users = [
+         { id: 1, name: "aa" },
+         { id: 2, name: "bb" },
+         { id: 3, name: "cc" },
+       ];
+
+       const getUserById = (id) =>
+         find((u) => u.id == id, users) || Promise.reject("없어요!");
+
+       const f = ({ name }) => name;
+       const g = getUserById;
+
+       // const fg = id => f(g(id));
+
+       const fg = (id) =>
+         Promise.resolve(id)
+           .then(g)
+           .then(f)
+           .catch((a) => a);
+
+       fg(2).then(log);
+
+       setTimeout(function () {
+         users.pop();
+         users.pop();
+         fg(2).then(log);
+       }, 10);
        ```
 
     6. go, pipe, reduce에서 비동기 제어
 
        ```javascript
+       // go
+       const go = (...args) => reduce((a, f) => f(a), args);
 
+       // pipe
+       const pipe =
+         (f, ...fs) =>
+         (...as) =>
+           go(f(...as), ...fs);
+
+       // go1
+       const go1 = (a, f) => (a instanceof Promise ? a.then(f) : f(a));
+
+       // reduce
+       const reduce = curry((f, acc, iter) => {
+         if (!iter) {
+           iter = acc[Symbol.iterator]();
+           acc = iter.next().value;
+         } else {
+           iter = iter[Symbol.iterator]();
+         }
+         return go1(acc, function recur(acc) {
+           let cur;
+           while (!(cur = iter.next()).done) {
+             const a = cur.value;
+             acc = f(acc, a);
+             if (acc instanceof Promise) return acc.then(recur);
+           }
+           return acc;
+         });
+       });
+
+       //
+       go(
+         Promise.resolve(1),
+         (a) => a + 10,
+         (a) => Promise.reject("error~~"), // catch()
+         (a) => console.log("----"),
+         (a) => a + 1000,
+         (a) => a + 10000,
+         log
+       ).catch((a) => console.log(a));
        ```
 
     7. promise.then의 중요한 규칙
 
-       ```javascript
+       - then() 메서드를 통해서 결과를 꺼냈을 때의 값이 반드시 Promise는 아님
 
+       ```javascript
+       Promise.resolve(Promise.resolve(1)).then(function (a) {
+         log(a);
+       });
+
+       new Promise((resolve) =>
+         resolve(new Promise((resolve) => resolve(1)))
+       ).then(log);
        ```
 
 10. 비동기/동시성 프로그래밍 2
