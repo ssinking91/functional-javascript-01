@@ -1277,6 +1277,7 @@
            while (!(cur = iter.next()).done) {
              const a = cur.value;
              acc = f(acc, a);
+             // 재귀 - 유명함수 : 매번 recur 가 실행되는 것이 아닌 비동기가 있을때만 실행되고 그때만 promise를 만들게 됩니다.
              if (acc instanceof Promise) return acc.then(recur);
            }
            return acc;
@@ -1299,6 +1300,8 @@
 
        - then() 메서드를 통해서 결과를 꺼냈을 때의 값이 반드시 Promise는 아님
 
+       - Promise가 중첩된 경우라도 then() 메서드를 통해 원하는 시점에 한번에 꺼낼 수 있음
+
        ```javascript
        Promise.resolve(Promise.resolve(1)).then(function (a) {
          log(a);
@@ -1314,19 +1317,153 @@
     1. 지연 평가 + Promise - L.map, map, take
 
        ```javascript
-
+       const go1 = (a, f) => (a instanceof Promise ? a.then(f) : f(a));
+       //
+       const nop = Symbol("nop");
+       //
+       const pipe =
+         (f, ...fs) =>
+         (...as) =>
+           go(f(...as), ...fs);
+       //
+       L.map = curry(function* (f, iter) {
+         for (const a of iter) {
+           yield go1(a, f);
+         }
+       });
+       //
+       const map = curry(pipe(L.map, takeAll));
+       //
+       const take = curry((l, iter) => {
+         let res = [];
+         iter = iter[Symbol.iterator]();
+         return (function recur() {
+           let cur;
+           while (!(cur = iter.next()).done) {
+             const a = cur.value;
+             // 재귀 - 유명함수 : 매번 recur 가 실행되는 것이 아닌 비동기가 있을때만 실행되고 그때만 promise를 만들게 됩니다.
+             if (a instanceof Promise) {
+               //.then((a) => {res.push(a) return res.length == l ? res : recur()})
+               return a
+                 .then((a) => ((res.push(a), res).length == l ? res : recur()))
+                 .catch((e) => (e == nop ? recur() : Promise.reject(e)));
+             }
+             res.push(a);
+             if (res.length == l) return res;
+           }
+           return res;
+         })();
+       });
+       //
+       go(
+         [Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)],
+         L.map((a) => a + 10),
+         take(2),
+         log
+       );
        ```
 
     2. Kleisli Composition - L.filter, filter, nop, take
 
        ```javascript
-
+       const go1 = (a, f) => (a instanceof Promise ? a.then(f) : f(a));
+       //
+       const nop = Symbol("nop");
+       //
+       const pipe =
+         (f, ...fs) =>
+         (...as) =>
+           go(f(...as), ...fs);
+       //
+       L.filter = curry(function* (f, iter) {
+         for (const a of iter) {
+           const b = go1(a, f);
+           if (b instanceof Promise)
+             yield b.then((b) => (b ? a : Promise.reject(nop)));
+           else if (b) yield a;
+         }
+       });
+       //
+       const filter = curry(pipe(L.filter, takeAll));
+       //
+       const take = curry((l, iter) => {
+         let res = [];
+         iter = iter[Symbol.iterator]();
+         return (function recur() {
+           let cur;
+           while (!(cur = iter.next()).done) {
+             const a = cur.value;
+             // 재귀 - 유명함수 : 매번 recur 가 실행되는 것이 아닌 비동기가 있을때만 실행되고 그때만 promise를 만들게 됩니다.
+             if (a instanceof Promise) {
+               // .then((a) => {res.push(a) return res.length == l ? res : recur()})
+               // L.filter => .catch((e) => (e == nop ? recur() : Promise.reject(e)));
+               return a
+                 .then((a) => ((res.push(a), res).length == l ? res : recur()))
+                 .catch((e) => (e == nop ? recur() : Promise.reject(e)));
+             }
+             res.push(a);
+             if (res.length == l) return res;
+           }
+           return res;
+         })();
+       });
+       //
+       go(
+         [1, 2, 3, 4, 5, 6],
+         L.map((a) => Promise.resolve(a * a)),
+         // L.map(a => a * a),
+         filter((a) => Promise.resolve(a % 2))
+         // L.map(a => a * a),
+         /*L.map(a => {
+            log(a);
+            return a * a;
+          }),
+          L.map(a => {
+            log(a);
+            return a * a;
+          }),*/
+         // take(4),
+         /*log*/
+       );
        ```
 
     3. reduce에서 nop 지원
 
        ```javascript
+       const go1 = (a, f) => (a instanceof Promise ? a.then(f) : f(a));
+       //
+       const head = (iter) => go1(take(1, iter), ([h]) => h);
+       //
+       const reduceF = (acc, a, f) =>
+         a instanceof Promise
+           ? a.then(
+               (a) => f(acc, a),
+               (e) => (e == nop ? acc : Promise.reject(e))
+             )
+           : f(acc, a);
+       //
+       const reduce = curry((f, acc, iter) => {
+         if (!iter)
+           return reduce(f, head((iter = acc[Symbol.iterator]())), iter);
 
+         iter = iter[Symbol.iterator]();
+         return go1(acc, function recur(acc) {
+           let cur;
+           while (!(cur = iter.next()).done) {
+             acc = reduceF(acc, cur.value, f);
+             if (acc instanceof Promise) return acc.then(recur);
+           }
+           return acc;
+         });
+       });
+       //
+       go(
+         [1, 2, 3, 4, 5],
+         L.map((a) => Promise.resolve(a * a)),
+         L.filter((a) => Promise.resolve(a % 2)),
+         reduce(add),
+         log
+       );
        ```
 
     4. 지연 평가 + Promise의 효율성
