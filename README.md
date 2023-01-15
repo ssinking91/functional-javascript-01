@@ -39,10 +39,12 @@
 2.  ES6에서의 순회와 이터러블/이터레이터 프로토콜
 
     1. 기존과 달라진 ES6에서의 리스트 순회
+
        ```javascript
        - for i++
        - for of
        ```
+
     2. Array, Set, Map을 통해 알아보는 이터러블/이터레이터 프로토콜
 
        - 이터러블: `이터레이터를 리턴`하는 `[Symbol.iterator]() 를 가진 값`
@@ -69,6 +71,7 @@
        ```
 
     3. 사용자 정의 이터러블
+
        ```javascript
        const iterable = {
          [Symbol.iterator]() {
@@ -87,6 +90,7 @@
        iterator.next();
        iterator.next();
        ```
+
     4. 전개 연산자
 
        ```javascript
@@ -1434,6 +1438,8 @@
        //
        const head = (iter) => go1(take(1, iter), ([h]) => h);
        //
+       //.then의 첫 번째 인수는 프라미스가 이행되었을 때 실행되는 함수이고, 여기서 실행 결과를 받음
+       //.then의 두 번째 인수는 프라미스가 거부되었을 때 실행되는 함수이고, 여기서 에러를 받음.
        const reduceF = (acc, a, f) =>
          a instanceof Promise
            ? a.then(
@@ -1450,6 +1456,8 @@
          return go1(acc, function recur(acc) {
            let cur;
            while (!(cur = iter.next()).done) {
+             // const a = cur.value;
+             // acc = f(acc, a);
              acc = reduceF(acc, cur.value, f);
              if (acc instanceof Promise) return acc.then(recur);
            }
@@ -1469,13 +1477,66 @@
     4. 지연 평가 + Promise의 효율성
 
        ```javascript
-
+       go(
+         [1, 2, 3, 4, 5, 6, 7, 8],
+         L.map((a) => {
+           log(a);
+           return new Promise((resolve) =>
+             setTimeout(() => resolve(a * a), 1000)
+           );
+         }),
+         L.filter((a) => {
+           log(a);
+           return new Promise((resolve) =>
+             setTimeout(() => resolve(a % 2), 1000)
+           );
+         }),
+         take(2),
+         reduce(add),
+         log
+       );
        ```
 
     5. 지연된 함수열을 병렬적으로 평가하기 - C.reduce, C.take 1
 
        ```javascript
+       const C = {};
 
+       function noop() {}
+
+       const catchNoop = ([...arr]) => (
+         arr.forEach((a) => (a instanceof Promise ? a.catch(noop) : a)), arr
+       );
+
+       C.reduce = curry((f, acc, iter) =>
+         iter ? reduce(f, acc, catchNoop(iter)) : reduce(f, catchNoop(acc))
+       );
+
+       C.take = curry((l, iter) => take(l, catchNoop(iter)));
+
+       C.takeAll = C.take(Infinity);
+
+       C.map = curry(pipe(L.map, C.takeAll));
+
+       C.filter = curry(pipe(L.filter, C.takeAll));
+
+       const delay1000 = (a) =>
+         new Promise((resolve) => {
+           console.log("TIME");
+           setTimeout(() => resolve(a), 1000);
+         });
+
+       console.time("");
+       go(
+         [1, 2, 3, 4, 5, 6, 7, 8, 9],
+         L.map((a) => delay1000(a * a)),
+         L.filter((a) => delay1000(a % 2)),
+         L.map((a) => delay1000(a * a)),
+         C.take(2),
+         C.reduce(add),
+         log,
+         (_) => console.timeEnd("")
+       );
        ```
 
     6. 지연된 함수열을 병렬적으로 평가하기 - C.reduce, C.take 2
